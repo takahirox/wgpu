@@ -205,7 +205,7 @@ impl GlobalExt for wgc::hub::Global<IdentityPassThroughFactory> {
                     device,
                     &wgt::BindGroupLayoutDescriptor {
                         label: Some(&label),
-                        bindings: &entries,
+                        entries: &entries,
                     },
                     id,
                 )
@@ -267,7 +267,7 @@ impl GlobalExt for wgc::hub::Global<IdentityPassThroughFactory> {
                     &wgc::binding_model::BindGroupDescriptor {
                         label: Some(&label),
                         layout: layout_id,
-                        bindings: &entry_vec,
+                        entries: &entry_vec,
                     },
                     id,
                 )

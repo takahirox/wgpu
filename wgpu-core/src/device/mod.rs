@@ -1195,7 +1195,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
         let mut token = Token::root();
         let hub = B::hub(self);
         let mut entry_map = FastHashMap::default();
-        for entry in desc.bindings {
+        for entry in desc.entries {
             if entry_map.insert(entry.binding, entry.clone()).is_some() {
                 return Err(binding_model::BindGroupLayoutError::ConflictBinding(
                     entry.binding,
@@ -1220,16 +1220,16 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
         }
 
         // Validate the count parameter
-        for binding in desc
-            .bindings
+        for entry in desc
+            .entries
             .iter()
-            .filter(|binding| binding.count.is_some())
+            .filter(|entry| entry.count.is_some())
         {
-            if let Some(count) = binding.count {
+            if let Some(count) = entry.count {
                 if count == 0 {
                     return Err(binding_model::BindGroupLayoutError::ZeroCount);
                 }
-                match binding.ty {
+                match entry.ty {
                     wgt::BindingType::SampledTexture { .. } => {
                         if !device
                             .features
@@ -1248,7 +1248,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
         }
 
         let raw_bindings = desc
-            .bindings
+            .entries
             .iter()
             .map(|binding| hal::pso::DescriptorSetLayoutBinding {
                 binding: binding.binding,
@@ -1284,7 +1284,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
             entries: entry_map,
             desc_counts: raw_bindings.iter().cloned().collect(),
             dynamic_count: desc
-                .bindings
+                .entries
                 .iter()
                 .filter(|b| b.has_dynamic_offset())
                 .count(),
@@ -1298,7 +1298,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
             Some(ref trace) => trace.lock().add(trace::Action::CreateBindGroupLayout {
                 id,
                 label: desc.label.map_or_else(String::new, str::to_string),
-                entries: desc.bindings.to_owned(),
+                entries: desc.entries.to_owned(),
             }),
             None => (),
         };
@@ -1448,7 +1448,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
 
         // Check that the number of bindings in the descriptor matches
         // the number of bindings in the layout.
-        let actual = desc.bindings.len();
+        let actual = desc.entries.len();
         let expected = bind_group_layout.entries.len();
         if actual != expected {
             return Err(BindGroupError::BindingsNumMismatch { expected, actual });
@@ -1496,14 +1496,14 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
 
             //TODO: group writes into contiguous sections
             let mut writes = Vec::new();
-            for b in desc.bindings {
-                let binding = b.binding;
+            for e in desc.entries {
+                let binding = e.binding;
                 // Find the corresponding declaration in the layout
                 let decl = bind_group_layout
                     .entries
                     .get(&binding)
                     .ok_or(BindGroupError::MissingBindingDeclaration(binding))?;
-                let descriptors: SmallVec<[_; 1]> = match b.resource {
+                let descriptors: SmallVec<[_; 1]> = match e.resource {
                     Br::Buffer(ref bb) => {
                         let (pub_usage, internal_use, min_size, dynamic) = match decl.ty {
                             wgt::BindingType::UniformBuffer {
@@ -1749,7 +1749,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
                 };
                 writes.alloc().init(hal::pso::DescriptorSetWrite {
                     set: desc_set.raw(),
-                    binding: b.binding,
+                    binding: e.binding,
                     array_offset: 0, //TODO
                     descriptors,
                 });
@@ -1788,7 +1788,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
                 label: desc.label.map_or_else(String::new, str::to_string),
                 layout_id: desc.layout,
                 entries: desc
-                    .bindings
+                    .entries
                     .iter()
                     .map(|entry| {
                         let res = match entry.resource {

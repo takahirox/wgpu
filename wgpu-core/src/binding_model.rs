@@ -111,7 +111,7 @@ pub struct BindGroupEntry<'a> {
 pub struct BindGroupDescriptor<'a> {
     pub label: Option<&'a str>,
     pub layout: BindGroupLayoutId,
-    pub bindings: &'a [BindGroupEntry<'a>],
+    pub entries: &'a [BindGroupEntry<'a>],
 }
 
 #[derive(Debug)]
